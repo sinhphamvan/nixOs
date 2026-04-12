@@ -1,78 +1,94 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
 
-echo "===== Start NixOS Auto Install ====="
+echo "======================================"
+echo "      NixOS 25.12 Auto Installer"
+echo "======================================"
 
 DISK="/dev/sda"
 HOSTNAME="nixos-server"
+
 ROOT_PASS="root123"
 ADMIN_USER="admin"
 ADMIN_PASS="admin123"
 
-echo "Wiping disk..."
-wipefs -a $DISK
+echo "[1/7] Wiping disk $DISK ..."
+wipefs -af $DISK
 sgdisk --zap-all $DISK
 
-echo "Creating partitions..."
-parted $DISK -- mklabel gpt
-parted $DISK -- mkpart ESP fat32 1MiB 512MiB
-parted $DISK -- set 1 boot on
-parted $DISK -- mkpart primary ext4 512MiB 100%
+echo "[2/7] Creating partitions..."
+parted -s $DISK mklabel gpt
+parted -s $DISK mkpart ESP fat32 1MiB 512MiB
+parted -s $DISK set 1 boot on
+parted -s $DISK mkpart primary ext4 512MiB 100%
 
-echo "Formatting partitions..."
+echo "[3/7] Formatting filesystems..."
 mkfs.fat -F32 ${DISK}1
 mkfs.ext4 -F ${DISK}2
 
-echo "Mounting..."
+echo "[4/7] Mounting target filesystem..."
 mount ${DISK}2 /mnt
 mkdir -p /mnt/boot
 mount ${DISK}1 /mnt/boot
 
-echo "Generate hardware config..."
+echo "[5/7] Generating hardware configuration..."
 nixos-generate-config --root /mnt
 
-echo "Updating configuration.nix..."
+echo "[6/7] Writing configuration.nix..."
 
-cat <<EOF >> /mnt/etc/nixos/configuration.nix
+cat > /mnt/etc/nixos/configuration.nix <<EOF
+{ config, pkgs, ... }:
 
-networking.hostName = "$HOSTNAME";
+{
+  imports =
+    [ ./hardware-configuration.nix ];
 
-time.timeZone = "Asia/Ho_Chi_Minh";
+  networking.hostName = "$HOSTNAME";
 
-boot.loader.systemd-boot.enable = true;
-boot.loader.efi.canTouchEfiVariables = true;
+  time.timeZone = "Asia/Ho_Chi_Minh";
 
-services.openssh.enable = true;
+  boot.loader.systemd-boot.enable = true;
+  boot.loader.efi.canTouchEfiVariables = true;
 
-users.users.$ADMIN_USER = {
-  isNormalUser = true;
-  extraGroups = [ "wheel" ];
-  initialPassword = "$ADMIN_PASS";
-};
+  services.openssh.enable = true;
 
-security.sudo.wheelNeedsPassword = false;
+  users.users.$ADMIN_USER = {
+    isNormalUser = true;
+    extraGroups = [ "wheel" ];
+    initialPassword = "$ADMIN_PASS";
+  };
 
-environment.systemPackages = with pkgs; [
-  git
-  vim
-  curl
-  htop
-];
+  security.sudo.wheelNeedsPassword = false;
 
+  environment.systemPackages = with pkgs; [
+    git
+    vim
+    curl
+    wget
+    htop
+  ];
+
+  system.stateVersion = "25.12";
+}
 EOF
 
-echo "Installing NixOS..."
+echo "[7/7] Installing NixOS..."
 nixos-install --no-root-passwd
 
 echo "Setting root password..."
 echo "root:$ROOT_PASS" | chpasswd --root /mnt
 
-echo "Install complete."
+echo "======================================"
+echo " Installation Complete"
+echo "--------------------------------------"
+echo "Root login:"
+echo "  user: root"
+echo "  pass: $ROOT_PASS"
+echo ""
+echo "Admin login:"
+echo "  user: $ADMIN_USER"
+echo "  pass: $ADMIN_PASS"
+echo "======================================"
 
-echo "===================================="
-echo "Login info:"
-echo "root password: $ROOT_PASS"
-echo "$ADMIN_USER password: $ADMIN_PASS"
-echo "===================================="
-
+sleep 5
 reboot
