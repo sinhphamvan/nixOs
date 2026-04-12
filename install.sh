@@ -4,7 +4,7 @@ set -e
 echo "===== Start NixOS Auto Install ====="
 
 DISK="/dev/sda"
-HOSTNAME="metta-server"
+HOSTNAME="nixos-server"
 ROOT_PASS="root123"
 ADMIN_USER="admin"
 ADMIN_PASS="admin123"
