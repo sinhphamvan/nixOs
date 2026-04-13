@@ -45,43 +45,39 @@
     openFirewall = true; # Tự động mở port 3000 (UI) và 53 (DNS)
   };
 
-  # --- 5. CHIA SẺ FILE (SAMBA) ---
-  # Tối ưu cho cả Windows và macOS (hỗ trợ Time Machine và icon Mac)
+# --- 5. CHIA SẺ FILE (SAMBA) ---
   services.samba = {
     enable = true;
-    securityType = "user";
     openFirewall = true;
-    extraConfig = ''
-      workgroup = WORKGROUP
-      server string = MettaServer
-      netbios name = MettaServer
+    # Thay thế extraConfig và shares cũ bằng cấu trúc settings mới
+    settings = {
+      global = {
+        "workgroup" = "WORKGROUP";
+        "server string" = "MettaServer";
+        "netbios name" = "MettaServer";
+        "security" = "user";
+        
+        # Tối ưu cho macOS (Giao thức Fruit)
+        "vfs objects" = "catia fruit streams_xattr";
+        "fruit:metadata" = "stream";
+        "fruit:model" = "MacSamba";
+        "fruit:posix_rename" = "yes";
+        "fruit:veto_appledouble" = "no";
+        "fruit:wipe_empty_files" = "yes";
+        "fruit:nfs_aces" = "no";
+      };
       
-      # Tối ưu cho macOS (Giao thức Fruit)
-      vfs objects = catia fruit streams_xattr
-      fruit:metadata = stream
-      fruit:model = MacSamba
-      fruit:posix_rename = yes
-      fruit:veto_appledouble = no
-      fruit:wipe_empty_files = yes
-      fruit:nfs_aces = no
-    '';
-    shares = {
       "MettaStorage" = {
-        path = "/srv/samba/storage";
-        browseable = "yes";
+        "path" = "/srv/samba/storage";
+        "browseable" = "yes";
         "read only" = "no";
         "guest ok" = "no";
         "create mask" = "0644";
         "directory mask" = "0755";
-        "fruit:time machine" = "yes"; # Cho phép làm ổ backup Time Machine
+        "fruit:time machine" = "yes";
       };
     };
   };
-
-  # Tạo thư mục lưu trữ nếu chưa có
-  systemd.tmpfiles.rules = [
-    "d /srv/samba/storage 0775 dong users -"
-  ];
 
   # --- 6. GIÁM SÁT HỆ THỐNG (NETDATA) ---
   # Theo dõi CPU, RAM, Network realtime tại port 19999
