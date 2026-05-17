@@ -65,7 +65,10 @@ cat > /mnt/etc/nixos/configuration.nix <<EOF
     vim
     curl
     wget
-    htop
+    btop
+    alacritty
+    gedit
+    gemini-cli
   ];
 
   system.stateVersion = "25.12";
