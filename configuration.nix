@@ -14,6 +14,8 @@
   boot.loader.efi.canTouchEfiVariables = true;
   
   networking.hostName = "metta-server"; # Tên máy chủ
+  networking.networkmanager.enable = true; # Kích hoạt NetworkManager (cung cấp lệnh nmtui để kết nối Wifi)
+  networking.useDHCP = false; # Tắt DHCP mặc định để tránh xung đột (NetworkManager sẽ tự động nhận diện và kết nối LAN/Wifi qua DHCP)
 
   # --- 2. QUẢN LÝ NGƯỜI DÙNG ---
   users.users.dongthan = {

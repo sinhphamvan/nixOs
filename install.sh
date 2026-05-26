@@ -44,6 +44,8 @@ cat > /mnt/etc/nixos/configuration.nix <<EOF
     [ ./hardware-configuration.nix ];
 
   networking.hostName = "$HOSTNAME";
+  networking.networkmanager.enable = true;
+  networking.useDHCP = false;
 
   time.timeZone = "Asia/Ho_Chi_Minh";
 
@@ -69,6 +71,7 @@ cat > /mnt/etc/nixos/configuration.nix <<EOF
     alacritty
     gedit
     gemini-cli
+    networkmanager
   ];
 
   system.stateVersion = "25.12";
